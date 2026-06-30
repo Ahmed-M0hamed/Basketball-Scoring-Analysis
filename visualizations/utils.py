@@ -1,0 +1,110 @@
+import cv2
+import math
+import numpy as np
+
+
+def draw_arc_from_three_points(
+    image,
+    p1,
+    p2,
+    p3,
+    color=(0, 255, 0),
+    thickness=2,
+    n_points=100,
+):
+    """
+    Draw the unique circular arc passing through p1 -> p3 -> p2.
+
+    Parameters
+    ----------
+    p1 : tuple
+        Arc start point.
+    p2 : tuple
+        Arc end point.
+    p3 : tuple
+        Any point lying on the desired arc.
+    """
+
+    p1 = np.asarray(p1, dtype=np.float64)
+    p2 = np.asarray(p2, dtype=np.float64)
+    p3 = np.asarray(p3, dtype=np.float64)
+
+    # ----------------------------
+    # Compute circle center
+    # ----------------------------
+    A = np.array([
+        [2*(p2[0]-p1[0]), 2*(p2[1]-p1[1])],
+        [2*(p3[0]-p1[0]), 2*(p3[1]-p1[1])]
+    ])
+
+    b = np.array([
+        p2[0]**2 + p2[1]**2 - p1[0]**2 - p1[1]**2,
+        p3[0]**2 + p3[1]**2 - p1[0]**2 - p1[1]**2
+    ])
+
+    # Three collinear points
+    if abs(np.linalg.det(A)) < 1e-8:
+        cv2.line(
+            image,
+            tuple(p1.astype(int)),
+            tuple(p2.astype(int)),
+            color,
+            thickness,
+        )
+        return None
+
+    center = np.linalg.solve(A, b)
+    radius = np.linalg.norm(center - p1)
+
+    # ----------------------------
+    # Compute angles
+    # ----------------------------
+    def angle(point):
+        return math.atan2(
+            point[1] - center[1],
+            point[0] - center[0]
+        )
+
+    a1 = angle(p1)
+    a2 = angle(p2)
+    a3 = angle(p3)
+
+    # normalize to [0, 2pi)
+    a1 %= 2*np.pi
+    a2 %= 2*np.pi
+    a3 %= 2*np.pi
+
+    def angle_between(start, end, test):
+        return ((test - start) % (2*np.pi)) <= ((end - start) % (2*np.pi))
+
+    # choose direction that passes through p3
+    if angle_between(a1, a2, a3):
+        start = a1
+        end = a2
+    else:
+        start = a2
+        end = a1
+
+    # unwrap
+    if end < start:
+        end += 2*np.pi
+
+    theta = np.linspace(start, end, n_points)
+
+    pts = np.stack([
+        center[0] + radius*np.cos(theta),
+        center[1] + radius*np.sin(theta)
+    ], axis=1)
+
+    pts = np.round(pts).astype(np.int32)
+
+    cv2.polylines(
+        image,
+        [pts],
+        False,
+        color,
+        thickness,
+        cv2.LINE_AA,
+    )
+
+    return  image 
