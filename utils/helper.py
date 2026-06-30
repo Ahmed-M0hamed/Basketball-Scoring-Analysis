@@ -32,27 +32,8 @@ def get_bottom_center_of_player(points) :
     y_center = int(y1-(y1-y2)) 
     return x_center, y_center
 
-def draw_arc(image, pt_start, center_pt, pt_end , r , color, thickness=2):
-
-    p1 = pt_start
-    p2 = pt_end
-    center = center_pt
-    radius = r
-    cx , cy = center_pt
-    angle1 = math.degrees(math.atan2(p1[1] - cy, p1[0] - cx))
-    angle2 = math.degrees(math.atan2(p2[1] - cy, p2[0] - cx))
-
-    # Convert from [-180,180] to [0,360)
-    angle1 %= 360
-    angle2 %= 360
-    cv2.ellipse(
-        image,
-        center,
-        (radius, radius),   # circle
-        0,                  # rotation
-        angle1,
-        angle2,
-        color=color,
-        thickness=thickness
-        )
-    return image 
+def get_center_of_box(points ) : 
+    x1 , y1 , x2, y2 = points 
+    x_center = int(x1 + (x2-x1  )/2 ) 
+    y_center = int(y1-(y1-y2)/2 ) 
+    return x_center, y_center 

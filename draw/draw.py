@@ -5,6 +5,7 @@ class Draw :
   
     def draw_players_ball(self , detections  , teams_classifications  , frames ) : 
         valid_team_member = None 
+        corrected_team_classifications  = []
         for i , (detection , frame , teams) in enumerate(zip(detections ,frames , teams_classifications)) : 
             if len(teams['boston']) != len(teams['new_york']) and valid_team_member is not None : 
                 teams = valid_team_member
@@ -33,7 +34,8 @@ class Draw :
                     cv2.rectangle(frame , (int(x1) , int(y1) ) , (int(x2) , int(y2)) , color= (0,255,0) , thickness=2) 
                     cv2.putText(frame , f'id_{track_id}_{name} ' , (int(x1) , int(y1 - 5)) ,cv2.FONT_HERSHEY_SIMPLEX, .75, (0, 0, 255), 2  ) 
             valid_team_member = teams 
-        return frames 
+            corrected_team_classifications.append(teams)
+        return frames , corrected_team_classifications
     def draw_key_points(self , detections ,frames ) : 
         for detection , frame in zip(detections , frames ) : 
             for point in detection : 

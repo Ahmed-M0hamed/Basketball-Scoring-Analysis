@@ -1,8 +1,9 @@
 import numpy as np 
 import cv2 
-from utils import draw_arc_from_three_points
+from .utils import draw_arc_from_three_points
 import math
-SCALE  = 50      # pixels per metre
+
+SCALE  = 20      # pixels per metre
 H_MARGIN = 300
 W_MARGIN =50                  # blank border around court (px)
 
@@ -13,7 +14,7 @@ PAINT_W         = 16
 PAINT_MARGIN    = 17 
 PAINT_H         = 19 
 FREE_T_R        = 5 
-THREE_P_R       = 28.25 
+THREE_P_R       = 29
 THREE_P_H       = 14 
 THREE_P_W       = 44 
 THREE_P_MARGIN  = 3 
@@ -27,7 +28,7 @@ def _m2p(x_m, y_m,
     return (int(x_m * scale) + w_margin,
             int(y_m * scale) + h_margin)
 def build_court_template(scale = SCALE,
-                         h_margin = H_MARGIN ,HEAT = False, w_margin = W_MARGIN , BACKGROUND = (0, 0, 0)):
+                         h_margin = H_MARGIN ,HEAT = False, w_margin = W_MARGIN , BACKGROUND = (34, 187, 58)):
 
 
     W_px = int(COURT_W * scale) + 2 * w_margin
@@ -107,6 +108,7 @@ def build_court_template(scale = SCALE,
         "TTLB": TTLB,
         "TTRB": TTRB,
         "TTR": TTR,
+        "TBLB" :TBLB, 
         "TBRB": TBRB,
         "TBLT": TBLT,
         "TBRT": TBRT,

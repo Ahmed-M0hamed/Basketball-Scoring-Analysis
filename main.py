@@ -3,6 +3,7 @@ import os
 from utils  import read_frames , write_video , tracker_hallosination
 from infering import Inference 
 from draw import Draw
+from visualizations import draw_mini_court
 import warnings
 
 def main():
@@ -16,9 +17,10 @@ def main():
     # tracker_hallosination(detections)
 
     drawer =Draw()
-    annotated_frames=drawer.draw_players_ball(detections , teams , frames) 
+    annotated_frames, corrected_team_classifications =drawer.draw_players_ball(detections , teams , frames) 
     annotated_frames = drawer.draw_key_points(court_detections , annotated_frames)
-    write_video(os.path.join(os.getcwd() , 'outputs/out_2.mp4') , annotated_frames)
+    annotated_frames = draw_mini_court(annotated_frames , detections , court_detections ,corrected_team_classifications)
+    write_video(os.path.join(os.getcwd() , 'outputs/out_3.mp4') , annotated_frames[:238])
 
 if __name__ == "__main__":
     main()
