@@ -1,30 +1,12 @@
 import numpy as np 
 from typing import List, Tuple, Dict, Any
 
-# def frames_to_ranges(frames):
-#     if not frames:
-#         return []
 
-#     frames = sorted(frames)  # Optional if already sorted
-
-#     ranges = []
-#     start = end = frames[0]
-
-#     for frame in frames[1:]:
-#         if frame == end + 1:
-#             end = frame
-#         else:
-#             ranges.append({"start": start, "end": end})
-#             start = end = frame
-
-#     ranges.append({"start": start, "end": end})
-
-#     return ranges
 def event_start_frames(frames):
     if not frames:
         return []
 
-    frames = sorted(frames)  # Optional if already sorted
+    frames = sorted(frames) 
 
     starts = [frames[0]]
 
