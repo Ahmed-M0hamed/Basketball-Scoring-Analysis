@@ -1,8 +1,14 @@
 import cv2
 from visualizations.court_tempelete import build_court_template
 import numpy as np 
-from .mini_maps import dynamic_map , heat_map
+from .mini_maps import dynamic_map , heat_map , foot_prints_map
 from utils import get_bottom_center_of_player , get_center_of_box
+from scoring_system import find_stats
+from .team_stats import StatsPanel
+from .scoring_effects import effects
+from .utils import check_which_team_offencing , smooth_curve
+from .game_momentum import get_momuntums 
+from .momunum_plot import draw_signal
 def compute_homography(
     src_pts,
     dst_pts ,
@@ -25,7 +31,8 @@ def draw_mini_court(
     frames , 
     detections , 
     court_detectoins , 
-    teams_classifications
+    teams_classifications ,
+    events
 ) :
     # MAP DETECTIONS TO COURT TEMPELETE POINTS
     points_mapping = {
@@ -57,11 +64,24 @@ def draw_mini_court(
         14: "CR",
         16: "CC",
     }
-    court_template_dynamic, points   = build_court_template()
-    court_template_heat_map_1 , points = build_court_template()
-    court_template_heat_map_2 , points = build_court_template()
+    court_template_dynamic, points    , top_arc_pts , bottom_arc_pts = build_court_template(BACKGROUND=(30,30,30))
+    THREE_LINE_TOP_LEFT = points['TTLT']
+    THREE_LINE_TOP_RIGHT = points['TTRT']
+    THREE_LINE_BOTTOM_LEFT = points['TBLT']
+    THREE_LINE_BOTTOM_RIGHT = points['TBRT']
+    court_template_heat_map_1 , points , _ , _ = build_court_template()
+    court_template_heat_map_2 , points , _ , _ = build_court_template()
+    court_templete_foot_prints , points , _ , _ = build_court_template(BACKGROUND=(130 ,130 ,130))
     team_1_cumultive = []
     team_2_cumultive = []
+    stats = {'boston' : {'score' : 0 , 'repond' : 0 , 'turnovers' : 0 , 'passes' : 0}  , 'new_york' : {'score' : 0 , 'repond' : 0 , 'turnovers' : 0 , 'passes' : 0}}
+    foot_prints = []
+    popup_events = []
+    x_position = int(frames[0].shape[1] / 2 - 210 ) 
+    panel = StatsPanel(x=x_position, y=30, width=420, row_height=40, alpha=0.80)
+    MAP = check_which_team_offencing(events['player-in-possestion'] , detections , teams_classifications)
+    cumulative_momuntum = []
+
     for i , (frame  , detection , court_detectoin , teams_classification ) in enumerate (zip(frames , detections , court_detectoins , teams_classifications )):
         
         # {'x': 413.0, 'y': 609.0, 'conf': 0.001953125, 'class_id': 3},
@@ -79,6 +99,13 @@ def draw_mini_court(
         
         H, mask = compute_homography(frame_court_detections, frame_tempelete_points)
 
+        stats, foot_prints, popup_events  = find_stats(stats, foot_prints,popup_events , events , i , teams_classifications , detections , H , top_arc_pts , bottom_arc_pts , THREE_LINE_TOP_LEFT , THREE_LINE_TOP_RIGHT , THREE_LINE_BOTTOM_LEFT , THREE_LINE_BOTTOM_RIGHT ) 
+        frame = panel.draw(frame, stats, title="TEAM STATS")
+        frame = foot_prints_map(i, frame, court_templete_foot_prints, foot_prints , 'bottom-left' , name='Footprints')
+        frame = effects(i , frame , popup_events , 30 ) 
+        cumulative_momuntum = get_momuntums(frame , i , teams_classification , detection , cumulative_momuntum , MAP , H , THREE_LINE_TOP_LEFT , THREE_LINE_TOP_RIGHT , THREE_LINE_BOTTOM_LEFT , THREE_LINE_BOTTOM_RIGHT)
+        color_signal = (0,0,255 ) if MAP[i] == 1 else (0 ,0,255)
+        frame = draw_signal(frame ,cumulative_momuntum , int(frame.shape[1] / 2 - 300 )  , int(frame.shape[0] - 270 ) , line_color=color_signal , fill_color=color_signal )
         team_1_positions = []
         team_2_positions = [] 
         ball_positions = []
@@ -102,13 +129,13 @@ def draw_mini_court(
         # ── (c) overlays ─────────────────────────────────────
         if H is not None:
             frame = dynamic_map(i , frame , court_template_dynamic ,frame_court_detections , H ,
-                                [ (np.array(team_1_positions) , (255,0,0))
-                                   ,(np.array(team_2_positions) , (0,0,255) )  
+                                [ (np.array(team_1_positions) , (0,0,255))
+                                   ,(np.array(team_2_positions) , (255,0,0) )  
                                    ,(np.array(ball_positions) , (30, 255, 255) )
-                                #    ,(np.array(ref_positiions) , (30, 255, 255) )
                                    ] ,name='dynamic')
             frame , team_1_cumultive = heat_map(frame , court_template_heat_map_1 ,H , np.array(team_1_positions ) 
-                                                , team_1_cumultive ,   position = 'top-right' , name ="BOSTON HEAT MAP" )
+                                                , team_1_cumultive ,   position = 'top-right' , name ="Boston Heat" )
             frame , team_2_cumultive = heat_map(frame , court_template_heat_map_2 ,H , np.array(team_2_positions ) 
-                                                , team_2_cumultive ,   position = 'bottom-right' , name='NEW YORK HEAT MAP' )
-    return frames 
+                                                , team_2_cumultive ,   position = 'bottom-right' , name='Newyork Heat' )
+
+    return frames , stats , foot_prints, cumulative_momuntum

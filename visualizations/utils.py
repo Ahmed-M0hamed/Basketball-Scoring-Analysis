@@ -107,4 +107,30 @@ def draw_arc_from_three_points(
         cv2.LINE_AA,
     )
 
-    return  image 
+    return  image  , pts
+
+def check_which_team_offencing(ball_possitions_frames , detections , teams_classifications) :
+    offensive_map = [0] * len(detections) 
+    last_ball_pos_index = 0 
+    for ball_bosition_frame in  ball_possitions_frames : 
+        teams = teams_classifications[ball_bosition_frame] 
+        detection = detections[ball_bosition_frame]
+        player_posses_index = np.where(detection.class_id == 4)
+        track_id_player_possess = detection.tracker_id[player_posses_index] 
+        if len(track_id_player_possess) == 1  and track_id_player_possess in teams['boston'] : 
+            offensive_map[last_ball_pos_index:ball_bosition_frame+1 ] = [0] * (ball_bosition_frame  - last_ball_pos_index)
+            last_ball_pos_index = ball_bosition_frame+1
+        elif len(track_id_player_possess) == 1 and  track_id_player_possess in teams['new_york'] : 
+            offensive_map[last_ball_pos_index:ball_bosition_frame+1 ] = [1] * (ball_bosition_frame  - last_ball_pos_index)
+            last_ball_pos_index = ball_bosition_frame+1
+    
+    offensive_map[ ball_possitions_frames[-1]  : len(detections) ]  = [0] * (len(detections) - ball_possitions_frames[-1])
+
+    return offensive_map 
+
+def smooth_curve(signal_history) : 
+    WINDOW = 5
+    if len(signal_history ) == WINDOW : 
+        smoothed_distance = np.mean(signal_history[-WINDOW:])
+        signal_history[-1] = smoothed_distance
+    return signal_history 

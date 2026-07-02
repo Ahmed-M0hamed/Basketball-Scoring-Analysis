@@ -4,7 +4,7 @@ from .utils import draw_arc_from_three_points
 import math
 
 SCALE  = 20      # pixels per metre
-H_MARGIN = 300
+H_MARGIN = 50
 W_MARGIN =50                  # blank border around court (px)
 
 # Standard ITF dimensions
@@ -91,8 +91,8 @@ def build_court_template(scale = SCALE,
     cv2.line(img, TBRT, TBRB,  WHITE, T) 
     cv2.ellipse(img, PTC, (int(FREE_T_R * scale) + w_margin  ,int(FREE_T_R * scale) + w_margin ) , 0, 0, 180, WHITE, T)
     cv2.ellipse(img, PBC, (int(FREE_T_R * scale) + w_margin  ,int(FREE_T_R * scale) + w_margin ) , 0, 0, -180, WHITE, T)
-    img = draw_arc_from_three_points(img , TTLB , TTRB , TTR , WHITE , T )
-    img = draw_arc_from_three_points(img , TBLT , TBRT ,TBR , WHITE , T )
+    img , top_arc_pts  = draw_arc_from_three_points(img , TTLB , TTRB , TTR , WHITE , T )
+    img , bottom_arc_pts  = draw_arc_from_three_points(img , TBLT , TBRT ,TBR , WHITE , T )
     cv2.line(img, CL,  CR,  WHITE, T)
     cv2.circle(img , CC ,int(CENTER_R_1 * scale) + w_margin , WHITE , T ,1)
     cv2.circle(img , CC ,int(CENTER_R_2 * scale) + w_margin , WHITE , T ,1)
@@ -128,5 +128,5 @@ def build_court_template(scale = SCALE,
         "CC": CC,
     }
 
-    return img , points 
+    return img , points  , top_arc_pts , bottom_arc_pts
 

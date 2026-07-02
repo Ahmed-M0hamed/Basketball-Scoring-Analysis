@@ -1,5 +1,6 @@
 import cv2
 import numpy as np 
+from scoring_system import get_less_than
 
 def dynamic_map(frame_n , 
     frame,
@@ -8,7 +9,7 @@ def dynamic_map(frame_n ,
     H,
     player_ref_ball , 
     position="top_right",
-    size_frac =  0.15,
+    size_frac =  0.12,
     name = ''
 ) : 
     
@@ -65,7 +66,7 @@ def heat_map(
     team , 
     team_cumilative , 
     position="top_right",
-    size_frac =  0.1,
+    size_frac =  0.12,
     name = ''
 ) : 
     
@@ -126,3 +127,60 @@ def heat_map(
                   (255, 255, 255), 1)
     cv2.putText(frame ,str(name) , (x0 , y0-15),cv2.FONT_HERSHEY_SIMPLEX,.9,(0, 0, 255),2,cv2.LINE_AA  )
     return frame ,team_cumilative
+
+def foot_prints_map(frame_n , 
+    frame,
+    court_template,
+    foot_prints , 
+    position="top_right",
+    size_frac =  0.12,
+    name = '') : 
+    fh, fw = frame.shape[:2]
+    th, tw = court_template.shape[:2]
+
+    target_w =   int(fw  * size_frac) 
+    target_h = int(th * int(fw  * size_frac)  / tw)
+    mini = cv2.resize(court_template.copy(), (target_w, target_h))
+
+    sx, sy = target_w / tw, target_h / th 
+
+    foot_prints_frames = [foot['frame'] for foot in foot_prints] 
+
+    previous_foot_prints = get_less_than(foot_prints_frames , frame_n )
+    for foot in foot_prints : 
+       if foot['frame'] in previous_foot_prints : 
+            color = (0 , 0  , 255) if foot['team'] == 'boston' else (255 , 0 , 0)
+            scorer_x , scorer_y = foot['scorer_position'] 
+            if foot['assist_id'] is not None : 
+                assist_x , assist_y = foot['assist_position'] 
+                mx, my = int(assist_x * sx), int(assist_y * sy)
+                cv2.putText(mini, '+' ,(mx, my), cv2.FONT_HERSHEY_SIMPLEX, .75, color, 2 )
+            if scorer_x != -1:
+                mx, my = int(scorer_x * sx), int(scorer_y * sy)
+                cv2.circle(mini, (mx, my), 7, color, -1)
+
+
+
+
+
+
+
+    pad = 80
+    if position == "bottom-right":
+        x0, y0 = fw - target_w - pad, fh - target_h - pad
+    elif position == "bottom-left":
+        x0, y0 = pad, fh - target_h - pad
+    elif position == "top-right":
+        x0, y0 = fw - target_w - pad, pad
+    else:   # top-left
+        x0, y0 = pad, pad
+
+    roi = frame[y0:y0+target_h, x0:x0+target_w]
+    frame[y0:y0+target_h, x0:x0+target_w] = cv2.addWeighted(
+        roi, 0.4, mini, 0.6, 0)
+    cv2.rectangle(frame,
+                  (x0 - 2, y0 - 2),
+                  (x0 + target_w + 2, y0 + target_h + 2),
+                  (255, 255, 255), 1)
+    cv2.putText(frame ,str(name) , (x0 , y0-15),cv2.FONT_HERSHEY_SIMPLEX,.9,(0, 0, 255),2,cv2.LINE_AA  )
+    return frame

@@ -37,3 +37,8 @@ def get_center_of_box(points ) :
     x_center = int(x1 + (x2-x1  )/2 ) 
     y_center = int(y1-(y1-y2)/2 ) 
     return x_center, y_center 
+
+def center_of_two_points(point_1 , point_2) : 
+    x1, y1 = point_1 
+    x2 , y2 = point_2 
+    return (int( (x1+x2) /2) , int( (y1+y2) /2))
